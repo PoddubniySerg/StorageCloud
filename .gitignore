@@ -1,1 +1,4 @@
 /.idea/
+/server/.idea/
+/server/target/
+/server/storage/
