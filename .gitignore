@@ -2,3 +2,7 @@
 /server/.idea/
 /server/target/
 /server/storage/
+mvnw.cmd
+mvnw
+/server/.jpb/
+/server/.mvn/
