@@ -9,7 +9,7 @@
 #### Требования к приложению:
 
 - Сервис должен предоставлять REST интерфейс для интеграции с FRONT
-- Сервис должны реализовывать все методы описанные [yaml файле](./CloudServiceSpecification.yaml):
+- Сервис должны реализовывать все методы описанные [yaml файле](https://github.com/netology-code/jd-homeworks/blob/master/diploma/CloudServiceSpecification.yaml):
   1. Вывод списка файлов
   2. Добавление файла
   3. Удаление файла
