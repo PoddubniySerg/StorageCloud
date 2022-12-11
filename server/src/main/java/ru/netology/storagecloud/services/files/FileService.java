@@ -77,10 +77,11 @@ public class FileService {
             throw new InputDataException(ErrorMessage.ERROR_INPUT_DATA);
         final var partsFileName = fileName.split("\\.");
         if (
-                partsFileName.length < 2
+                partsFileName.length != 2
                         || partsFileName[0] == null
                         || partsFileName[0].isBlank()
                         || partsFileName[1] == null
+                        || partsFileName[1].split(" ").length > 1
                         || partsFileName[1].isBlank()
         ) {
             throw new InputDataException(ErrorMessage.ERROR_INPUT_DATA);

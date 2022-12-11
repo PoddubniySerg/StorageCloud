@@ -13,7 +13,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
 import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.token.AuthToken;
+import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
+import ru.netology.storagecloud.services.tokens.AuthToken;
 import ru.netology.storagecloud.services.tokens.TokenDecoder;
 
 import java.io.IOException;
@@ -53,8 +54,8 @@ public class UsernameLoginFilter extends UsernamePasswordAuthenticationFilter {
 
             final var token = tokenHeader.split(" ")[1].trim();
             this.token = decoder.readToken(token);
-            if (this.token == null) this.token = AuthToken.builder().token("").username("").build();
-            return this.token.username();
+            if (this.token == null) this.token = AuthTokenGenerated.builder().token("").username("").build();
+            return this.token.getUsername();
 
         } catch (Exception e) {
             throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ERROR);
@@ -63,6 +64,6 @@ public class UsernameLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     @Override
     protected String obtainPassword(HttpServletRequest request) {
-        return this.token.token();
+        return this.token.getToken();
     }
 }

@@ -34,15 +34,15 @@ public class AuthTokenProvider implements AuthenticationProvider {
         try {
             final var tokenString = authentication.getCredentials().toString();
             final var token = tokenDecoder.readToken(tokenString);
-            final var tokenEntity = tokenJpaRepository.findById(token.username()).orElse(null);
+            final var tokenEntity = tokenJpaRepository.findById(token.getUsername()).orElse(null);
             final var nowTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
             if (
                     tokenEntity == null
                             || !tokenEntity.isActive()
-                            || !tokenEntity.getToken().equals(token.token())
-                            || !tokenEntity.getUsername().equals(token.username())
-                            || tokenEntity.getStart() != token.start()
-                            || tokenEntity.getExpiration() != token.expiration()
+                            || !tokenEntity.getToken().equals(token.getToken())
+                            || !tokenEntity.getUsername().equals(token.getUsername())
+                            || tokenEntity.getStart() != token.getStart()
+                            || tokenEntity.getExpiration() != token.getExpiration()
                             || tokenEntity.getExpiration() < nowTime
             ) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ERROR);

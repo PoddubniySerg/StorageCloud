@@ -16,8 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
 import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.token.AuthToken;
+import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
 import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
+import ru.netology.storagecloud.services.tokens.AuthToken;
 import ru.netology.storagecloud.services.tokens.TokenDecoder;
 
 import java.io.IOException;
@@ -80,7 +81,7 @@ public class TestUsernameLoginFilter {
         Mockito
                 .when(decoder.readToken(Mockito.anyString()))
                 .thenReturn(
-                        AuthToken.builder()
+                        AuthTokenGenerated.builder()
                                 .username(username)
                                 .token(token)
                                 .build()
@@ -148,7 +149,7 @@ public class TestUsernameLoginFilter {
         final var username = "testUsername";
         final var token = "testToken";
         final var decodingToken =
-                AuthToken.builder()
+                AuthTokenGenerated.builder()
                         .username(username)
                         .token(token)
                         .build();
@@ -163,7 +164,7 @@ public class TestUsernameLoginFilter {
     @MethodSource("parametersForObtainUsernameExceptionsMethodsTest")
     public void obtainUsernameExceptionsMethodsTest(String token) {
         final var request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getHeader("auth-token")).thenReturn(token);
+        Mockito.when(request.getHeader("auth-token")).thenReturn(!token.equals("null") ? token : null);
         final var decoder = Mockito.mock(TokenDecoder.class);
         if (token.startsWith("Bearer "))
             Mockito.doThrow(new RuntimeException()).when(decoder).readToken(Mockito.anyString());
@@ -182,6 +183,7 @@ public class TestUsernameLoginFilter {
 
         return Stream.of(
                 Arguments.of(token),
+                Arguments.of("null"),
                 Arguments.of("Bearer " + token)
         );
     }

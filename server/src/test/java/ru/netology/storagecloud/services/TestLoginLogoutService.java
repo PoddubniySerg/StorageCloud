@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.model.token.AuthToken;
+import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
 import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
 import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
 import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
@@ -50,7 +50,7 @@ public class TestLoginLogoutService {
         final var username = "testLogin";
         final var password = "testPassword";
         final var token = "testToken";
-        final var authToken = AuthToken.builder().token(token).build();
+        final var authToken = AuthTokenGenerated.builder().token(token).build();
         final var login = new Login();
         login.setLogin(username);
         login.setPassword(password);
@@ -82,7 +82,7 @@ public class TestLoginLogoutService {
         final var tokenGenerator = Mockito.mock(TokenGenerator.class);
         Mockito
                 .when(tokenGenerator.readToken(Mockito.anyString()))
-                .thenReturn(AuthToken.builder().username("testUsername").build());
+                .thenReturn(AuthTokenGenerated.builder().username("testUsername").build());
         final var passwordEncoder = Mockito.mock(PasswordEncoder.class);
         final var userDetailService = Mockito.mock(UserDetailsService.class);
         final var tokenJpaRepository = Mockito.mock(TokenJpaRepository.class);

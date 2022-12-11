@@ -1,18 +1,12 @@
 package ru.netology.storagecloud.repositories;
 
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
-import ru.netology.storagecloud.controllers.FileController;
-import ru.netology.storagecloud.exceptions.InputDataException;
-import ru.netology.storagecloud.exceptions.InternalServerException;
 import ru.netology.storagecloud.model.params.*;
 import ru.netology.storagecloud.model.responses.FileDescription;
 import ru.netology.storagecloud.model.responses.UserFileResponse;
@@ -21,12 +15,10 @@ import ru.netology.storagecloud.repositories.database.entities.FileEntity;
 import ru.netology.storagecloud.repositories.files.FileJpaRepository;
 import ru.netology.storagecloud.repositories.files.FileRepositoryImpl;
 import ru.netology.storagecloud.repositories.files.FileStorage;
-import ru.netology.storagecloud.services.files.FileService;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class TestFileRepositoryImpl {
 
@@ -151,6 +143,21 @@ public class TestFileRepositoryImpl {
     }
 
     @Test
+    public void deleteFileWithStorageExceptionTest() throws IOException {
+        final var storage = Mockito.mock(FileStorage.class);
+        final var dataBase = Mockito.mock(FileJpaRepository.class);
+        final var fileName = "testFileName";
+        final var params = new DeleteFileParams(fileName);
+        final var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Mockito.doThrow(new IOException()).when(storage).deleteFile(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.when(dataBase.findByFileNameAndUsername(fileName, username)).thenReturn(Optional.of(FileEntity.builder().build()));
+        final var repository = new FileRepositoryImpl(dataBase, storage);
+
+        Assertions.assertThrows(IOException.class, () -> repository.deleteFile(params));
+        Mockito.verify(dataBase, Mockito.times(0)).delete(Mockito.any(FileEntity.class));
+    }
+
+    @Test
     public void updateFileMethodTest() throws IOException {
         final var username = SecurityContextHolder.getContext().getAuthentication().getName();
         final var storage = Mockito.mock(FileStorage.class);
@@ -191,6 +198,21 @@ public class TestFileRepositoryImpl {
     }
 
     @Test
+    public void updateFileWithStorageExceptionTest() throws IOException {
+        final var storage = Mockito.mock(FileStorage.class);
+        final var dataBase = Mockito.mock(FileJpaRepository.class);
+        final var fileName = "testFileName";
+        final var params = new UpdateFileNameParams(fileName, fileName);
+        final var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Mockito.doThrow(new IOException()).when(storage).updateFile(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.when(dataBase.findByFileNameAndUsername(fileName, username)).thenReturn(Optional.of(FileEntity.builder().build()));
+        final var repository = new FileRepositoryImpl(dataBase, storage);
+
+        Assertions.assertThrows(IOException.class, () -> repository.updateFileName(params));
+        Mockito.verify(dataBase, Mockito.times(0)).save(Mockito.any(FileEntity.class));
+    }
+
+    @Test
     public void addFileMethodTest() throws IOException {
         final var storage = Mockito.mock(FileStorage.class);
         final var dataBase = Mockito.mock(FileJpaRepository.class);
@@ -213,5 +235,21 @@ public class TestFileRepositoryImpl {
                 .saveFile(this.path, username, fileName, multipartFile);
         Mockito.verify(dataBase, Mockito.times(1)).save(fileEntityCaptor.capture());
         Assertions.assertEquals(fileEntityExpected, fileEntityCaptor.getValue());
+    }
+
+    @Test
+    public void addFileWithStorageExceptionTest() throws IOException {
+        final var storage = Mockito.mock(FileStorage.class);
+        final var dataBase = Mockito.mock(FileJpaRepository.class);
+        final var fileName = "testFileName";
+        final var multipartFile = Mockito.mock(MultipartFile.class);
+        final var fileBytes = new byte[0];
+        final var params = new AddFileParams(fileName, multipartFile);
+        Mockito.when(multipartFile.getBytes()).thenReturn(fileBytes);
+        Mockito.doThrow(new IOException()).when(storage).saveFile(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        final var repository = new FileRepositoryImpl(dataBase, storage);
+
+        Assertions.assertThrows(IOException.class, () -> repository.addFile(params));
+        Mockito.verify(dataBase, Mockito.times(0)).save(Mockito.any(FileEntity.class));
     }
 }

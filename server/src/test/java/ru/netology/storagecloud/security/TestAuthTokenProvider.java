@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
 import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.token.AuthToken;
+import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
 import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
 import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
 import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
@@ -58,19 +58,19 @@ public class TestAuthTokenProvider {
         tokenGenerator.setDaysToExpiration(1);
         final var user = "testUser";
         final var token = tokenGenerator.generateToken(user);
-        final var authentication = new UsernamePasswordAuthenticationToken("", token.token());
-        final var expected = new UsernamePasswordAuthenticationToken(user, token.token(), new ArrayList<>());
+        final var authentication = new UsernamePasswordAuthenticationToken("", token.getToken());
+        final var expected = new UsernamePasswordAuthenticationToken(user, token.getToken(), new ArrayList<>());
 
         final var tokenEntity = TokenEntity.builder()
-                .username(token.username())
-                .token(token.token())
+                .username(token.getUsername())
+                .token(token.getToken())
                 .isActive(true)
-                .start(token.start())
-                .expiration(token.expiration())
+                .start(token.getStart())
+                .expiration(token.getExpiration())
                 .build();
 
         final var repository = Mockito.mock(TokenJpaRepository.class);
-        Mockito.when(repository.findById(token.username())).thenReturn(Optional.of(tokenEntity));
+        Mockito.when(repository.findById(token.getUsername())).thenReturn(Optional.of(tokenEntity));
         final var provider = new AuthTokenProvider(repository, tokenGenerator);
         provider.tokenDecoder = Mockito.mock(TokenDecoder.class);
         Mockito.when(provider.tokenDecoder.readToken(Mockito.anyString())).thenReturn(token);
@@ -83,7 +83,7 @@ public class TestAuthTokenProvider {
     public void authenticateMethodWithThrowExceptionTest(
             TokenGenerator tokenGenerator,
             Authentication authentication,
-            AuthToken token,
+            AuthTokenGenerated token,
             TokenEntity tokenEntity
     ) {
         final Optional<TokenEntity> optionalTokenEntity = tokenEntity == null ? Optional.empty() : Optional.of(tokenEntity);
@@ -107,7 +107,7 @@ public class TestAuthTokenProvider {
         final var expirationToken = tokenGenerator.generateToken(user);
         tokenGenerator.setDaysToExpiration(1);
         final var token = tokenGenerator.generateToken(user);
-        final var authentication = new UsernamePasswordAuthenticationToken("", token.token());
+        final var authentication = new UsernamePasswordAuthenticationToken("", token.getToken());
 
 
         return Stream.of(
@@ -119,33 +119,33 @@ public class TestAuthTokenProvider {
                         authentication,
                         token,
                         TokenEntity.builder()
-                                .username(expirationToken.username())
-                                .token(expirationToken.token())
+                                .username(expirationToken.getUsername())
+                                .token(expirationToken.getToken())
                                 .isActive(true)
-                                .start(expirationToken.start())
-                                .expiration(expirationToken.expiration())
+                                .start(expirationToken.getStart())
+                                .expiration(expirationToken.getExpiration())
                                 .build()),
                 Arguments.of(
                         tokenGenerator,
                         authentication,
                         token,
                         TokenEntity.builder()
-                                .username(token.username())
-                                .token(token.token())
+                                .username(token.getUsername())
+                                .token(token.getToken())
                                 .isActive(false)
-                                .start(token.start())
-                                .expiration(token.expiration())
+                                .start(token.getStart())
+                                .expiration(token.getExpiration())
                                 .build()),
                 Arguments.of(
                         tokenGenerator,
                         authentication,
                         token,
                         TokenEntity.builder()
-                                .username(token.username())
+                                .username(token.getUsername())
                                 .token("invalid token")
                                 .isActive(true)
-                                .start(token.start())
-                                .expiration(token.expiration())
+                                .start(token.getStart())
+                                .expiration(token.getExpiration())
                                 .build()),
                 Arguments.of(
                         tokenGenerator,
@@ -153,31 +153,31 @@ public class TestAuthTokenProvider {
                         token,
                         TokenEntity.builder()
                                 .username("invalid username")
-                                .token(token.token())
+                                .token(token.getToken())
                                 .isActive(true)
-                                .start(token.start())
-                                .expiration(token.expiration())
+                                .start(token.getStart())
+                                .expiration(token.getExpiration())
                                 .build()),
                 Arguments.of(
                         tokenGenerator,
                         authentication,
                         token,
                         TokenEntity.builder()
-                                .username(token.username())
-                                .token(token.token())
+                                .username(token.getUsername())
+                                .token(token.getToken())
                                 .isActive(true)
                                 .start(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
-                                .expiration(token.expiration())
+                                .expiration(token.getExpiration())
                                 .build()),
                 Arguments.of(
                         tokenGenerator,
                         authentication,
                         token,
                         TokenEntity.builder()
-                                .username(token.username())
-                                .token(token.token())
+                                .username(token.getUsername())
+                                .token(token.getToken())
                                 .isActive(true)
-                                .start(token.start())
+                                .start(token.getStart())
                                 .expiration(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
                                 .build())
         );

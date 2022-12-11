@@ -75,7 +75,7 @@ public class SecurityConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource) {
+    public UserDetailsService userDetailsService(DataSource dataSource, PasswordEncoder encoder) {
         final var jdbcUserDetailsManager = new JdbcUserDetailsManager(dataSource);
         if (!users.isEmpty()) {
             for (var userProperty : users) {
@@ -83,7 +83,7 @@ public class SecurityConfiguration implements WebMvcConfigurer {
                 final var roles = userProperty.roles();
                 final var userBuilder = User
                         .withUsername(userProperty.username())
-                        .password(encoder().encode(userProperty.password()))
+                        .password(encoder.encode(userProperty.password()))
                         .credentialsExpired(userProperty.credentialsExpired());
                 if (authorities != null && !authorities.isEmpty()) {
                     userBuilder.authorities(authorities.stream().distinct().map(SimpleGrantedAuthority::new).toList());

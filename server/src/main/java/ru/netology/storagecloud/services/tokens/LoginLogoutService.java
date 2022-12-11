@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.netology.storagecloud.model.errors.ErrorMessage;
 import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.model.token.AuthToken;
 import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
 import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
 import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
@@ -42,7 +41,7 @@ public class LoginLogoutService extends DaoAuthenticationProvider {
         try {
             final var username = login.getLogin();
             final var authentication = new UsernamePasswordAuthenticationToken(username, login.getPassword());
-            return generateToken(authentication).token();
+            return generateToken(authentication).getToken();
         } catch (Exception e) {
             throw new BadCredentialsException(ErrorMessage.BAD_CREDENTIALS);
         }
@@ -51,7 +50,7 @@ public class LoginLogoutService extends DaoAuthenticationProvider {
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         final var tokenString = request.getHeader(TOKEN_HEADER_NAME).split(" ")[1].trim();
         final var token = tokenDecoder.readToken(tokenString);
-        final var tokenEntity = tokenJpaRepository.findById(token.username()).orElse(null);
+        final var tokenEntity = tokenJpaRepository.findById(token.getUsername()).orElse(null);
         logout(tokenEntity, response);
     }
 
@@ -59,10 +58,10 @@ public class LoginLogoutService extends DaoAuthenticationProvider {
         final var result = this.authenticate(authentication);
         final var token = tokenEncoder.generateToken(result.getName());
         final var tokenEntity = TokenEntity.builder()
-                .username(token.username())
-                .token(token.token())
-                .start(token.start())
-                .expiration(token.expiration())
+                .username(token.getUsername())
+                .token(token.getToken())
+                .start(token.getStart())
+                .expiration(token.getExpiration())
                 .isActive(true)
                 .build();
         this.tokenJpaRepository.save(tokenEntity);

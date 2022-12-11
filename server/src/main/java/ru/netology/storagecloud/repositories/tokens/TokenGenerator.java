@@ -11,7 +11,7 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import ru.netology.storagecloud.model.token.AuthToken;
+import ru.netology.storagecloud.services.tokens.AuthToken;
 import ru.netology.storagecloud.services.tokens.TokenDecoder;
 import ru.netology.storagecloud.services.tokens.TokenEncoder;
 
@@ -62,7 +62,7 @@ public class TokenGenerator implements TokenEncoder, TokenDecoder {
             final var header = new JWEHeader(JWE_ALGORITHM, ENCRYPTION_METHOD);
             final var jweObject = new JWEObject(header, payload);
             jweObject.encrypt(encrypter);
-            return AuthToken.builder()
+            return AuthTokenGenerated.builder()
                     .token(jweObject.serialize())
                     .username(username)
                     .start(startLong)
@@ -84,7 +84,7 @@ public class TokenGenerator implements TokenEncoder, TokenDecoder {
             final var username = (String) claims.getClaim(USERNAME_CLAIM_KEY);
             final var start = (long) claims.getClaim(DATE_CLAIM_KEY);
             final var expiration = (long) claims.getClaim(EXPIRATION_CLAIM_KEY);
-            return AuthToken.builder()
+            return AuthTokenGenerated.builder()
                     .token(string)
                     .username(username)
                     .start(start)
