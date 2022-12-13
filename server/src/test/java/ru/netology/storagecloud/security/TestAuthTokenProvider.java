@@ -10,12 +10,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
-import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
-import ru.netology.storagecloud.services.tokens.TokenDecoder;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.repositories.tokens.entities.models.AuthTokenGenerated;
+import ru.netology.storagecloud.repositories.tokens.entities.dao.TokenEntity;
+import ru.netology.storagecloud.repositories.tokens.util.TokenGenerator;
+import ru.netology.storagecloud.repositories.tokens.jpa.TokenJpaRepository;
+import ru.netology.storagecloud.services.tokens.util.AuthTokenDecoder;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -72,8 +72,8 @@ public class TestAuthTokenProvider {
         final var repository = Mockito.mock(TokenJpaRepository.class);
         Mockito.when(repository.findById(token.getUsername())).thenReturn(Optional.of(tokenEntity));
         final var provider = new AuthTokenProvider(repository, tokenGenerator);
-        provider.tokenDecoder = Mockito.mock(TokenDecoder.class);
-        Mockito.when(provider.tokenDecoder.readToken(Mockito.anyString())).thenReturn(token);
+        provider.tokenDecoder = Mockito.mock(AuthTokenDecoder.class);
+        Mockito.when(provider.tokenDecoder.readAuthToken(Mockito.anyString())).thenReturn(token);
         final var result = provider.authenticate(authentication);
         Assertions.assertEquals(expected, result);
     }
@@ -90,8 +90,8 @@ public class TestAuthTokenProvider {
         final var repository = Mockito.mock(TokenJpaRepository.class);
         Mockito.when(repository.findById(token.username())).thenReturn(optionalTokenEntity);
         final var provider = new AuthTokenProvider(repository, tokenGenerator);
-        provider.tokenDecoder = Mockito.mock(TokenDecoder.class);
-        Mockito.when(provider.tokenDecoder.readToken(Mockito.anyString())).thenReturn(token);
+        provider.tokenDecoder = Mockito.mock(AuthTokenDecoder.class);
+        Mockito.when(provider.tokenDecoder.readAuthToken(Mockito.anyString())).thenReturn(token);
         Assertions.assertThrows(
                 UnauthorizedException.class,
                 () -> provider.authenticate(authentication),

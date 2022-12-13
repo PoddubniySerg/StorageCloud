@@ -1,79 +1,41 @@
 package ru.netology.storagecloud.services.tokens;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
+import ru.netology.storagecloud.exceptions.BadCredentialsException;
+import ru.netology.storagecloud.models.auth.requests.Login;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.services.tokens.repository.TokenRepository;
+import ru.netology.storagecloud.services.tokens.util.AuthTokenDecoder;
 
 @Service
-public class LoginLogoutService extends DaoAuthenticationProvider {
+public class LoginLogoutService {
 
-    protected final static String TOKEN_HEADER_NAME = "auth-token";
+    protected final TokenRepository tokenRepository;
+    protected final AuthTokenDecoder tokenDecoder;
 
-    protected final TokenJpaRepository tokenJpaRepository;
-    protected final TokenEncoder tokenEncoder;
-    protected final TokenDecoder tokenDecoder;
-
-    public LoginLogoutService(
-            TokenGenerator tokenGenerator,
-            PasswordEncoder passwordEncoder,
-            UserDetailsService userDetailsService,
-            TokenJpaRepository tokenJpaRepository) {
-        this.tokenJpaRepository = tokenJpaRepository;
-        this.tokenEncoder = tokenGenerator;
-        this.tokenDecoder = tokenGenerator;
-        this.setPasswordEncoder(passwordEncoder);
-        this.setUserDetailsService(userDetailsService);
+    public LoginLogoutService(TokenRepository tokenRepository, AuthTokenDecoder tokenDecoder) {
+        this.tokenRepository = tokenRepository;
+        this.tokenDecoder = tokenDecoder;
     }
 
-    public String checkLogin(Login login) {
+    public String checkLogin(Login login) throws BadCredentialsException {
         try {
-            final var username = login.getLogin();
-            final var authentication = new UsernamePasswordAuthenticationToken(username, login.getPassword());
-            return generateToken(authentication).getToken();
+            final var token = tokenRepository.generateToken(login);
+            if (token == null || token.isEmpty() || token.isBlank()) {
+                throw new BadCredentialsException(ErrorMessage.BAD_CREDENTIALS);
+            }
+            return token;
         } catch (Exception e) {
             throw new BadCredentialsException(ErrorMessage.BAD_CREDENTIALS);
         }
     }
 
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        final var tokenString = request.getHeader(TOKEN_HEADER_NAME).split(" ")[1].trim();
-        final var token = tokenDecoder.readToken(tokenString);
-        final var tokenEntity = tokenJpaRepository.findById(token.getUsername()).orElse(null);
-        logout(tokenEntity, response);
-    }
-
-    private AuthToken generateToken(UsernamePasswordAuthenticationToken authentication) {
-        final var result = this.authenticate(authentication);
-        final var token = tokenEncoder.generateToken(result.getName());
-        final var tokenEntity = TokenEntity.builder()
-                .username(token.getUsername())
-                .token(token.getToken())
-                .start(token.getStart())
-                .expiration(token.getExpiration())
-                .isActive(true)
-                .build();
-        this.tokenJpaRepository.save(tokenEntity);
-        return token;
-    }
-
-    private void logout(TokenEntity tokenEntity, HttpServletResponse response) {
-        if (tokenEntity != null) {
-            tokenEntity.setActive(false);
-            tokenJpaRepository.save(tokenEntity);
+    public void logout(String tokenString) {
+        try {
+            final var token = tokenDecoder.readAuthToken(tokenString.split(" ")[1].trim());
+            tokenRepository.logout(token);
+        } catch (Exception e) {
+//            TODO nothing
         }
-        response.addCookie(new Cookie("JSESSIONID", null));
-        SecurityContextHolder.clearContext();
     }
 }

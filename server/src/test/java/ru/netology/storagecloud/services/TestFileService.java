@@ -10,12 +10,12 @@ import org.mockito.Mockito;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.storagecloud.exceptions.InputDataException;
 import ru.netology.storagecloud.exceptions.InternalServerException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.params.*;
-import ru.netology.storagecloud.model.requests.NewFileName;
-import ru.netology.storagecloud.model.responses.FileDescription;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
-import ru.netology.storagecloud.model.responses.UserFilesListResponse;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.models.files.params.*;
+import ru.netology.storagecloud.models.files.requests.NewFileName;
+import ru.netology.storagecloud.models.files.responses.FileDescription;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
+import ru.netology.storagecloud.models.files.responses.UserFilesListResponse;
 import ru.netology.storagecloud.services.files.FileRepository;
 import ru.netology.storagecloud.services.files.FileService;
 

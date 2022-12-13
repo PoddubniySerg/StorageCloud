@@ -23,16 +23,16 @@ import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import ru.netology.storagecloud.config.entities.UserProperties;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.errors.ExceptionResponse;
-import ru.netology.storagecloud.model.requests.NewFileName;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
-import ru.netology.storagecloud.repositories.database.entities.FileEntity;
-import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
-import ru.netology.storagecloud.repositories.files.FileJpaRepository;
-import ru.netology.storagecloud.repositories.files.FileStorage;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
-import ru.netology.storagecloud.services.tokens.TokenEncoder;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.models.errors.ExceptionResponse;
+import ru.netology.storagecloud.models.files.requests.NewFileName;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
+import ru.netology.storagecloud.repositories.files.dao.jpa.FileJpaRepository;
+import ru.netology.storagecloud.repositories.files.dao.entities.FileEntity;
+import ru.netology.storagecloud.repositories.files.storage.FileStorage;
+import ru.netology.storagecloud.repositories.tokens.jpa.TokenJpaRepository;
+import ru.netology.storagecloud.repositories.tokens.util.TokenGenerator;
+import ru.netology.storagecloud.repositories.tokens.entities.dao.TokenEntity;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -125,7 +125,7 @@ class TestFileModule {
     @Autowired
     private ObjectMapper mapper;
     @Autowired
-    private TokenEncoder tokenEncoder;
+    private TokenGenerator tokenGenerator;
     @Autowired
     private TokenJpaRepository tokenJpaRepository;
     @Autowired
@@ -167,7 +167,7 @@ class TestFileModule {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).addFilter(springSecurityFilterChain).build();
         testStartTime = System.nanoTime();
         if (token == null) {
-            final var generateToken = tokenEncoder.generateToken(TEST_LOGIN);
+            final var generateToken = tokenGenerator.generateToken(TEST_LOGIN);
             tokenEntity = TokenEntity.builder()
                     .username(generateToken.getUsername())
                     .token(generateToken.getToken())
@@ -384,7 +384,7 @@ class TestFileModule {
                 break;
             case TOKEN_NON_EXISTENT_USER:
                 requestBuilder.header(TOKEN_HEADER_NAME,
-                        TOKEN_START_WITH + tokenEncoder.generateToken("non_existent_user").getToken());
+                        TOKEN_START_WITH + tokenGenerator.generateToken("non_existent_user").getToken());
                 break;
             case TOKEN_IS_NOT_ACTIVE:
                 final var notActiveTokenEntity = tokenJpaRepository.findById(TEST_LOGIN).orElseThrow();
@@ -394,7 +394,7 @@ class TestFileModule {
                 break;
             case TOKEN_REPLACED:
                 requestBuilder.header(TOKEN_HEADER_NAME,
-                        TOKEN_START_WITH + tokenEncoder.generateToken(TEST_LOGIN).getToken());
+                        TOKEN_START_WITH + tokenGenerator.generateToken(TEST_LOGIN).getToken());
                 break;
             case TOKEN_START_TIME_REPLACED:
                 final var replacedStartTimeToken = tokenJpaRepository.findById(TEST_LOGIN).orElseThrow();

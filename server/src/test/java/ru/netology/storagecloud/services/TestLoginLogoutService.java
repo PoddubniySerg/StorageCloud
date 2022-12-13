@@ -1,22 +1,18 @@
 package ru.netology.storagecloud.services;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.*;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
-import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
+import ru.netology.storagecloud.exceptions.BadCredentialsException;
+import ru.netology.storagecloud.models.auth.requests.Login;
 import ru.netology.storagecloud.services.tokens.LoginLogoutService;
+import ru.netology.storagecloud.services.tokens.models.AuthToken;
+import ru.netology.storagecloud.services.tokens.repository.TokenRepository;
+import ru.netology.storagecloud.services.tokens.util.AuthTokenDecoder;
 
-import java.util.Optional;
+import java.util.stream.Stream;
 
 public class TestLoginLogoutService {
 
@@ -46,55 +42,105 @@ public class TestLoginLogoutService {
     }
 
     @Test
-    public void checkLoginMethodTest() {
+    public void checkLoginMethodTest() throws BadCredentialsException {
         final var username = "testLogin";
         final var password = "testPassword";
         final var token = "testToken";
-        final var authToken = AuthTokenGenerated.builder().token(token).build();
+        final var decoder = Mockito.mock(AuthTokenDecoder.class);
         final var login = new Login();
         login.setLogin(username);
         login.setPassword(password);
-        final var userDetailService = Mockito.mock(UserDetailsService.class);
-        final var userDetails = Mockito.mock(UserDetails.class);
-        Mockito.when(userDetails.getPassword()).thenReturn(password);
-        Mockito.when(userDetails.isCredentialsNonExpired()).thenReturn(true);
-        Mockito.when(userDetails.isAccountNonLocked()).thenReturn(true);
-        Mockito.when(userDetails.isEnabled()).thenReturn(true);
-        Mockito.when(userDetails.isAccountNonExpired()).thenReturn(true);
-        Mockito.when(userDetailService.loadUserByUsername(username)).thenReturn(userDetails);
-        final var tokenGenerator = Mockito.mock(TokenGenerator.class);
-        Mockito.when(tokenGenerator.generateToken(Mockito.any())).thenReturn(authToken);
-        final var tokenJpaRepository = Mockito.mock(TokenJpaRepository.class);
-        final var passwordEncoder = Mockito.mock(PasswordEncoder.class);
-        Mockito.when(passwordEncoder.matches(password, password)).thenReturn(true);
-        final var service = new LoginLogoutService(tokenGenerator, passwordEncoder, userDetailService, tokenJpaRepository);
+
+        final var repository = Mockito.mock(TokenRepository.class);
+        Mockito.when(repository.generateToken(login)).thenReturn(token);
+        final var service = new LoginLogoutService(repository, decoder);
         final var result = service.checkLogin(login);
-        Mockito.verify(tokenGenerator, Mockito.times(1)).generateToken(Mockito.any());
-        Mockito.verify(tokenJpaRepository, Mockito.times(1)).save(Mockito.any(TokenEntity.class));
         Assertions.assertEquals(result, token);
     }
 
-    @Test
-    public void logoutMethodTest() {
-        final var request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getHeader("auth-token")).thenReturn("auth token");
-        final var response = Mockito.mock(HttpServletResponse.class);
-        final var tokenGenerator = Mockito.mock(TokenGenerator.class);
+    @ParameterizedTest
+    @MethodSource("parametersForCheckLoginMethodExceptionTest")
+    public void checkLoginMethodExceptionTest(String tokenStr) {
+        final var username = "testLogin";
+        final var password = "testPassword";
+        final var token = tokenStr.equals("null") ? null : tokenStr;
+        final var decoder = Mockito.mock(AuthTokenDecoder.class);
+        final var login = new Login();
+        login.setLogin(username);
+        login.setPassword(password);
+
+        final var repository = Mockito.mock(TokenRepository.class);
+        if (tokenStr.equals("throwable")) {
+            Mockito.doThrow(new RuntimeException()).when(repository).generateToken(login);
+        } else {
+            Mockito.when(repository.generateToken(login)).thenReturn(token);
+        }
+        final var service = new LoginLogoutService(repository, decoder);
+        Assertions.assertThrows(BadCredentialsException.class, () -> service.checkLogin(login));
+    }
+
+    private static Stream<Arguments> parametersForCheckLoginMethodExceptionTest() {
+        return Stream.of(
+                Arguments.of(""),
+                Arguments.of(" "),
+                Arguments.of("null"),
+                Arguments.of("throwable")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("parametersForLogoutMethodTest")
+    public void logoutMethodTest(String token) {
+        final var trimmedToken = token != null ? token.split(" ")[1].trim() : null;
+        final var repository = Mockito.mock(TokenRepository.class);
+        final var tokenDecoder = Mockito.mock(AuthTokenDecoder.class);
+        final var authToken = Mockito.mock(AuthToken.class);
         Mockito
-                .when(tokenGenerator.readToken(Mockito.anyString()))
-                .thenReturn(AuthTokenGenerated.builder().username("testUsername").build());
-        final var passwordEncoder = Mockito.mock(PasswordEncoder.class);
-        final var userDetailService = Mockito.mock(UserDetailsService.class);
-        final var tokenJpaRepository = Mockito.mock(TokenJpaRepository.class);
-        final var tokenEntity = TokenEntity.builder().build();
-        Mockito.when(tokenJpaRepository.findById(Mockito.any())).thenReturn(Optional.of(tokenEntity));
-        final var service = new LoginLogoutService(tokenGenerator, passwordEncoder, userDetailService, tokenJpaRepository);
-        service.logout(request, response);
-        Mockito.verify(tokenJpaRepository, Mockito.times(1)).save(tokenEntity);
-        final var captor = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(response, Mockito.times(1)).addCookie(captor.capture());
-        final var argument = captor.getValue();
-        Assertions.assertEquals(argument.getName(), "JSESSIONID");
-        Assertions.assertNull(argument.getValue());
+                .when(tokenDecoder.readAuthToken(trimmedToken))
+                .thenReturn(authToken);
+        final var service = new LoginLogoutService(repository, tokenDecoder);
+        service.logout(token);
+        Mockito.verify(tokenDecoder, Mockito.times(1)).readAuthToken(trimmedToken);
+        Mockito.verify(repository, Mockito.times(1)).logout(authToken);
+    }
+
+    private static Stream<Arguments> parametersForLogoutMethodTest() {
+        return Stream.of(
+                Arguments.of("Bearer auth token"),
+                Arguments.of("Bearer auth-token")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("parametersForLogoutMethodExceptionTest")
+    public void logoutMethodExceptionTest(String tokenStr) {
+        final var isDecoderThrowException = tokenStr.equals("decoder exception");
+        final var isRepositoryThrowException = tokenStr.equals("repository exception");
+        final var token = tokenStr.equals("null") ? null : tokenStr;
+        final var trimmedToken =
+                isDecoderThrowException || isRepositoryThrowException ? token.split(" ")[1].trim() : null;
+        final var repository = Mockito.mock(TokenRepository.class);
+        final var tokenDecoder = Mockito.mock(AuthTokenDecoder.class);
+        final var authToken = Mockito.mock(AuthToken.class);
+        if (isDecoderThrowException) {
+            Mockito.doThrow(new RuntimeException()).when(tokenDecoder).readAuthToken(trimmedToken);
+        }
+        if (isRepositoryThrowException) {
+            Mockito.when(tokenDecoder.readAuthToken(trimmedToken)).thenReturn(authToken);
+            Mockito.doThrow(new RuntimeException()).when(repository).logout(authToken);
+        }
+        final var service = new LoginLogoutService(repository, tokenDecoder);
+        service.logout(token);
+        Assertions.assertDoesNotThrow(() -> service.logout(token));
+    }
+
+    private static Stream<Arguments> parametersForLogoutMethodExceptionTest() {
+        return Stream.of(
+                Arguments.of("null"),
+                Arguments.of(" "),
+                Arguments.of(""),
+                Arguments.of("decoder exception"),
+                Arguments.of("repository exception")
+        );
     }
 }

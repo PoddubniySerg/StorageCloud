@@ -18,13 +18,13 @@ import org.springframework.util.MultiValueMapAdapter;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import ru.netology.storagecloud.config.entities.UserProperties;
-import ru.netology.storagecloud.model.errors.ExceptionResponse;
-import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.model.responses.AuthTokenResponse;
-import ru.netology.storagecloud.repositories.database.entities.TokenEntity;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
-import ru.netology.storagecloud.services.tokens.TokenDecoder;
-import ru.netology.storagecloud.services.tokens.TokenEncoder;
+import ru.netology.storagecloud.models.errors.ExceptionResponse;
+import ru.netology.storagecloud.models.auth.requests.Login;
+import ru.netology.storagecloud.models.auth.responses.AuthTokenResponse;
+import ru.netology.storagecloud.repositories.tokens.jpa.TokenJpaRepository;
+import ru.netology.storagecloud.repositories.tokens.util.TokenGenerator;
+import ru.netology.storagecloud.repositories.tokens.entities.dao.TokenEntity;
+import ru.netology.storagecloud.services.tokens.util.AuthTokenDecoder;
 
 import java.net.URI;
 import java.util.List;
@@ -67,9 +67,9 @@ class TestLoginLogoutModule {
     @Autowired
     private ObjectMapper mapper;
     @Autowired
-    private TokenDecoder tokenDecoder;
+    private AuthTokenDecoder tokenDecoder;
     @Autowired
-    private TokenEncoder tokenEncoder;
+    private TokenGenerator tokenGenerator;
     @Autowired
     private TokenJpaRepository tokenJpaRepository;
 
@@ -115,7 +115,7 @@ class TestLoginLogoutModule {
         final var entity = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
         final var responseBody = mapper.readValue(entity.getBody(), AuthTokenResponse.class);
-        final var token = tokenDecoder.readToken(responseBody.authToken());
+        final var token = tokenDecoder.readAuthToken(responseBody.authToken());
         Assertions.assertEquals(HttpStatusCode.valueOf(200), entity.getStatusCode());
         Assertions.assertNotNull(responseBody.authToken());
         Assertions.assertFalse(responseBody.authToken().isEmpty());
@@ -165,7 +165,7 @@ class TestLoginLogoutModule {
             case "null":
                 break;
             case "token":
-                final var newToken = tokenEncoder.generateToken(TEST_LOGIN);
+                final var newToken = tokenGenerator.generateToken(TEST_LOGIN);
                 final var tokenEntity = TokenEntity.builder()
                         .username(newToken.getUsername())
                         .token(newToken.getToken())

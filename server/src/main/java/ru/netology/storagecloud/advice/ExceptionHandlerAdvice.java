@@ -2,12 +2,12 @@ package ru.netology.storagecloud.advice;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.netology.storagecloud.exceptions.BadCredentialsException;
 import ru.netology.storagecloud.exceptions.InputDataException;
 import ru.netology.storagecloud.exceptions.InternalServerException;
-import ru.netology.storagecloud.model.errors.ExceptionResponse;
+import ru.netology.storagecloud.models.errors.ExceptionResponse;
 
 @RestControllerAdvice
 public class ExceptionHandlerAdvice {

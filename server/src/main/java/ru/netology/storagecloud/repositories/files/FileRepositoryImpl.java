@@ -4,11 +4,13 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
-import ru.netology.storagecloud.model.params.*;
-import ru.netology.storagecloud.model.responses.FileDescription;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
-import ru.netology.storagecloud.model.responses.UserFilesListResponse;
-import ru.netology.storagecloud.repositories.database.entities.FileEntity;
+import ru.netology.storagecloud.models.files.params.*;
+import ru.netology.storagecloud.models.files.responses.FileDescription;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
+import ru.netology.storagecloud.models.files.responses.UserFilesListResponse;
+import ru.netology.storagecloud.repositories.files.dao.jpa.FileJpaRepository;
+import ru.netology.storagecloud.repositories.files.dao.entities.FileEntity;
+import ru.netology.storagecloud.repositories.files.storage.FileStorage;
 import ru.netology.storagecloud.services.files.FileRepository;
 
 import java.io.IOException;

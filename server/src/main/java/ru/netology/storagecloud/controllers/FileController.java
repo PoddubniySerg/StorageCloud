@@ -5,9 +5,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.netology.storagecloud.exceptions.InputDataException;
 import ru.netology.storagecloud.exceptions.InternalServerException;
-import ru.netology.storagecloud.model.params.*;
-import ru.netology.storagecloud.model.responses.FileDescription;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
+import ru.netology.storagecloud.models.files.params.*;
+import ru.netology.storagecloud.models.files.responses.FileDescription;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
 import ru.netology.storagecloud.services.files.FileService;
 
 import java.util.List;

@@ -24,10 +24,10 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import ru.netology.storagecloud.config.entities.UserProperties;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.errors.ExceptionResponse;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.models.errors.ExceptionResponse;
+import ru.netology.storagecloud.repositories.tokens.util.TokenGenerator;
+import ru.netology.storagecloud.repositories.tokens.jpa.TokenJpaRepository;
 import ru.netology.storagecloud.security.AuthTokenProvider;
 import ru.netology.storagecloud.security.UsernameLoginFilter;
 

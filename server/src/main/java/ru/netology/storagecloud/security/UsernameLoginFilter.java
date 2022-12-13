@@ -12,10 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
-import ru.netology.storagecloud.services.tokens.AuthToken;
-import ru.netology.storagecloud.services.tokens.TokenDecoder;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.security.models.AuthTokenEmpty;
+import ru.netology.storagecloud.security.models.SecurityToken;
+import ru.netology.storagecloud.security.util.SecurityTokenDecoder;
 
 import java.io.IOException;
 
@@ -25,8 +25,8 @@ public class UsernameLoginFilter extends UsernamePasswordAuthenticationFilter {
     private static final String TOKEN_HEADER_NAME = "auth-token";
     private static final String TOKEN_START_WITH = "Bearer ";
 
-    private final TokenDecoder decoder;
-    private AuthToken token;
+    private final SecurityTokenDecoder decoder;
+    private SecurityToken token;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -53,8 +53,8 @@ public class UsernameLoginFilter extends UsernamePasswordAuthenticationFilter {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ERROR);
 
             final var token = tokenHeader.split(" ")[1].trim();
-            this.token = decoder.readToken(token);
-            if (this.token == null) this.token = AuthTokenGenerated.builder().token("").username("").build();
+            this.token = decoder.readSecurityToken(token);
+            if (this.token == null) this.token = new AuthTokenEmpty();
             return this.token.getUsername();
 
         } catch (Exception e) {

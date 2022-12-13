@@ -9,8 +9,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.security.authentication.BadCredentialsException;
-import ru.netology.storagecloud.model.requests.Login;
-import ru.netology.storagecloud.model.responses.AuthTokenResponse;
+import ru.netology.storagecloud.models.auth.requests.Login;
+import ru.netology.storagecloud.models.auth.responses.AuthTokenResponse;
 import ru.netology.storagecloud.services.tokens.LoginLogoutService;
 
 import java.util.stream.Stream;
@@ -43,7 +43,7 @@ public class TestLoginLogoutController {
     }
 
     @Test
-    public void loginMethodTest() {
+    public void loginMethodTest() throws ru.netology.storagecloud.exceptions.BadCredentialsException {
         final var service = Mockito.mock(LoginLogoutService.class);
         final var login = new Login();
         login.setLogin("testLogin");
@@ -61,7 +61,7 @@ public class TestLoginLogoutController {
 
     @ParameterizedTest
     @MethodSource("parametersForLoginMethodExceptionsTest")
-    public void loginMethodExceptionsTest(Exception e) {
+    public void loginMethodExceptionsTest(Exception e) throws ru.netology.storagecloud.exceptions.BadCredentialsException {
         final var service = Mockito.mock(LoginLogoutService.class);
         final var login = new Login();
         login.setLogin("testLogin");
@@ -80,23 +80,29 @@ public class TestLoginLogoutController {
 
     @Test
     public void logoutMethodTest() {
+        final var authRequestHeaderName = "auth-token";
+        final var token = "auth-token";
         final var service = Mockito.mock(LoginLogoutService.class);
         final var request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader(authRequestHeaderName)).thenReturn(token);
         final var response = Mockito.mock(HttpServletResponse.class);
         final var controller = new LoginLogoutController(service);
         Assertions.assertDoesNotThrow(() -> controller.logout(request, response));
-        Mockito.verify(service, Mockito.times(1)).logout(request, response);
+        Mockito.verify(service, Mockito.times(1)).logout(token);
     }
 
     @ParameterizedTest
     @MethodSource("parametersForLogoutMethodExceptionsTest")
     public void logoutMethodExceptionsTest(Exception e) {
+        final var authRequestHeaderName = "auth-token";
+        final var token = "auth-token";
         final var service = Mockito.mock(LoginLogoutService.class);
         final var request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader(authRequestHeaderName)).thenReturn(token);
         final var response = Mockito.mock(HttpServletResponse.class);
-        Mockito.doThrow(e).when(service).logout(request, response);
+        Mockito.doThrow(e).when(service).logout(token);
         final var controller = new LoginLogoutController(service);
-        Assertions.assertDoesNotThrow(() -> controller.logout(request, response));
+        Assertions.assertThrows(e.getClass(), () -> controller.logout(request, response));
     }
 
     private static Stream<Arguments> parametersForLogoutMethodExceptionsTest() {

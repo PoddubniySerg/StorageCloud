@@ -6,11 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.netology.storagecloud.exceptions.InputDataException;
 import ru.netology.storagecloud.exceptions.InternalServerException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.model.params.*;
-import ru.netology.storagecloud.model.requests.NewFileName;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
-import ru.netology.storagecloud.model.responses.UserFilesListResponse;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.models.files.params.*;
+import ru.netology.storagecloud.models.files.requests.NewFileName;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
+import ru.netology.storagecloud.models.files.responses.UserFilesListResponse;
 
 @RequiredArgsConstructor
 @Service

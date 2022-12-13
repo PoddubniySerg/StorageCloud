@@ -1,8 +1,8 @@
 package ru.netology.storagecloud.services.files;
 
-import ru.netology.storagecloud.model.params.*;
-import ru.netology.storagecloud.model.responses.UserFileResponse;
-import ru.netology.storagecloud.model.responses.UserFilesListResponse;
+import ru.netology.storagecloud.models.files.params.*;
+import ru.netology.storagecloud.models.files.responses.UserFileResponse;
+import ru.netology.storagecloud.models.files.responses.UserFilesListResponse;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

@@ -15,11 +15,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.repositories.tokens.AuthTokenGenerated;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.services.tokens.AuthToken;
-import ru.netology.storagecloud.services.tokens.TokenDecoder;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.repositories.tokens.entities.models.AuthTokenGenerated;
+import ru.netology.storagecloud.repositories.tokens.util.TokenGenerator;
+import ru.netology.storagecloud.security.models.SecurityToken;
+import ru.netology.storagecloud.security.util.SecurityTokenDecoder;
 
 import java.io.IOException;
 import java.util.stream.Stream;
@@ -75,11 +75,11 @@ public class TestUsernameLoginFilter {
     ) {
         final var captor = ArgumentCaptor.forClass(Authentication.class);
         final var response = Mockito.mock(HttpServletResponse.class);
-        final var decoder = Mockito.mock(TokenDecoder.class);
+        final var decoder = Mockito.mock(SecurityTokenDecoder.class);
         final var username = "testUsername";
         final var token = "testToken";
         Mockito
-                .when(decoder.readToken(Mockito.anyString()))
+                .when(decoder.readSecurityToken(Mockito.anyString()))
                 .thenReturn(
                         AuthTokenGenerated.builder()
                                 .username(username)
@@ -131,11 +131,11 @@ public class TestUsernameLoginFilter {
 
     @ParameterizedTest
     @MethodSource("parametersForObtainUsernameAndPasswordMethodsTest")
-    public void obtainUsernameAndPasswordMethodsTest(AuthToken token, String expectedUsername, String expectedPassword) {
+    public void obtainUsernameAndPasswordMethodsTest(SecurityToken token, String expectedUsername, String expectedPassword) {
         final var request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getHeader("auth-token")).thenReturn("Bearer testToken");
-        final var decoder = Mockito.mock(TokenDecoder.class);
-        Mockito.when(decoder.readToken(Mockito.anyString())).thenReturn(token);
+        final var decoder = Mockito.mock(SecurityTokenDecoder.class);
+        Mockito.when(decoder.readSecurityToken(Mockito.anyString())).thenReturn(token);
         final var authFilter = new UsernameLoginFilter(decoder);
 
         final var resultUsername = authFilter.obtainUsername(request);
@@ -165,9 +165,9 @@ public class TestUsernameLoginFilter {
     public void obtainUsernameExceptionsMethodsTest(String token) {
         final var request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getHeader("auth-token")).thenReturn(!token.equals("null") ? token : null);
-        final var decoder = Mockito.mock(TokenDecoder.class);
+        final var decoder = Mockito.mock(SecurityTokenDecoder.class);
         if (token.startsWith("Bearer "))
-            Mockito.doThrow(new RuntimeException()).when(decoder).readToken(Mockito.anyString());
+            Mockito.doThrow(new RuntimeException()).when(decoder).readSecurityToken(Mockito.anyString());
         final var authFilter = new UsernameLoginFilter(decoder);
         Assertions
                 .assertThrows(

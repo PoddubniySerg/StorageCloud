@@ -6,11 +6,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import ru.netology.storagecloud.exceptions.UnauthorizedException;
-import ru.netology.storagecloud.model.errors.ErrorMessage;
-import ru.netology.storagecloud.repositories.tokens.TokenGenerator;
-import ru.netology.storagecloud.repositories.tokens.TokenJpaRepository;
-import ru.netology.storagecloud.services.tokens.TokenDecoder;
-import ru.netology.storagecloud.services.tokens.TokenEncoder;
+import ru.netology.storagecloud.models.errors.ErrorMessage;
+import ru.netology.storagecloud.repositories.tokens.jpa.TokenJpaRepository;
+import ru.netology.storagecloud.services.tokens.util.AuthTokenDecoder;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -19,13 +17,11 @@ import java.util.ArrayList;
 public class AuthTokenProvider implements AuthenticationProvider {
 
     protected final TokenJpaRepository tokenJpaRepository;
-    protected TokenEncoder tokenEncoder;
-    protected TokenDecoder tokenDecoder;
+    protected AuthTokenDecoder tokenDecoder;
 
-    public AuthTokenProvider(TokenJpaRepository tokenJpaRepository, TokenGenerator tokenGenerator) {
+    public AuthTokenProvider(TokenJpaRepository tokenJpaRepository, AuthTokenDecoder tokenDecoder) {
         this.tokenJpaRepository = tokenJpaRepository;
-        this.tokenEncoder = tokenGenerator;
-        this.tokenDecoder = tokenGenerator;
+        this.tokenDecoder = tokenDecoder;
     }
 
     @SneakyThrows
@@ -33,7 +29,7 @@ public class AuthTokenProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         try {
             final var tokenString = authentication.getCredentials().toString();
-            final var token = tokenDecoder.readToken(tokenString);
+            final var token = tokenDecoder.readAuthToken(tokenString);
             final var tokenEntity = tokenJpaRepository.findById(token.getUsername()).orElse(null);
             final var nowTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
             if (
